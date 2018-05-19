@@ -1,4 +1,4 @@
-#include <curses.h>
+#include <ncurses.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <time.h>
@@ -178,6 +178,8 @@ void addTail()
   tail -> next = malloc(sizeof(struct snake));
   (tail -> next) -> x = tail -> prevx;
   (tail -> next) -> y = tail -> prevy;
+  (tail -> next) -> prevy = -1;
+  (tail -> next) -> prevx = -1;
   (tail -> next) -> symbol = '+';
 }
 
