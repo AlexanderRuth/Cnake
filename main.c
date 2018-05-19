@@ -41,6 +41,7 @@ void updateBoard();
 void moveApple();
 void updateTail();
 void displayLose();
+void printIntroScreen();
 
 typedef struct snake
 {
@@ -87,6 +88,7 @@ void* getChars()
 void* readInput()
 {
 
+  int curClock = 0;
   struct timespec time, time2;
   
   time.tv_sec = 0;
@@ -125,11 +127,24 @@ void* readInput()
 	  moveApple(); 
 	}
 
-      updateTail();
-      if(!done)
-	updateBoard();
+      if(buffer != 0)
+	{
+	  time.tv_sec = 0;
+	  time.tv_nsec = 100000000;
+	  
+	  updateTail();
+	  if(!done)
+	    updateBoard();
+	  else
+	    displayLose();
+	}
       else
-	displayLose();
+	{
+	  curClock % 20 > 10 ? printIntroScreen(1) : printIntroScreen(-1);
+	}
+
+      curClock = curClock == 20 ? 0 : curClock;
+      curClock++;
     }
 
   return NULL;
@@ -248,7 +263,35 @@ void updateBoard()
 void displayLose()
 {
   clear();
-  printw("\n\n\n        YOU LOSE     \nPress any button to quit\n\n");
+  mvprintw(max_y / 2, max_x / 2 - strlen("You Lose!")/2, "You Lose");
+  mvprintw(max_y / 2 - 1, max_x / 2 + 1 - strlen("Final Score: 0000000")/2, "Final Score: %07u", applesEaten * 100);
+  mvprintw(max_y / 2 - 2, max_x / 2 - strlen("Press any button to quit")/2, "Press any button to quit");
+  refresh();
+}
+
+void printIntroScreen(int curClock)
+{
+  char* splitString;
+  int offset = -3;
+  char logo[] = LOGO;
+
+  clear();
+
+  splitString = strtok(logo, "\n");
+
+  while(splitString != NULL)
+    {
+      mvprintw(max_y / 2 + offset, max_x / 2 - strlen(splitString) / 2 + curClock*2, splitString);
+      splitString = strtok(NULL, "\n");
+      offset++;
+    }
+
+  offset++;
+
+  mvprintw(max_y / 2 + offset, max_x / 2 - strlen("Coded in glorious C by Alex Ruth") / 2, "Coded in glorious C by Alex Ruth");
+  offset+=2;
+  mvprintw(max_y / 2 + offset, max_x / 2 - strlen("Press W, A, S, or D to start") / 2, "Press W, A, S, or D to start\n");
+
   refresh();
 }
 
@@ -256,7 +299,6 @@ void displayLose()
 int main()
 {
   WINDOW *stdscr = initscr();
-  char* splitString;
 
   getmaxyx(stdscr, max_y, max_x);
   max_y -= bottomOffset;
@@ -267,30 +309,10 @@ int main()
   pthread_t characterGetter;
   pthread_t inputReader;
 
+  printIntroScreen(1);
 
-  int offset = -3;
-  char logo[] = LOGO;
-
-  splitString = strtok(logo, "\n");
-
-  while(splitString != NULL)
-    {
-      mvprintw(max_y / 2 + offset, max_x / 2 - strlen(splitString) / 2, splitString);
-      splitString = strtok(NULL, "\n");
-      offset++; 
-    }
-
-  offset++;
-
-  mvprintw(max_y / 2 + offset, max_x / 2 - strlen("Coded in glorious C by Alex Ruth") / 2, "Coded in glorious C by Alex Ruth");
-  offset+=2;
-  mvprintw(max_y / 2 + offset, max_x / 2 - strlen("Press any button to start") / 2, "Press any button to start\n");
-
-  refresh();
-
-  getch();
-
-  updateBoard();
+  head.x = max_x / 2;
+  head.y = max_y / 2;
   
   pthread_create(&characterGetter, NULL, getChars, NULL);
   pthread_create(&inputReader, NULL, readInput, NULL);
