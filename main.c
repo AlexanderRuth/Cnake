@@ -51,18 +51,20 @@ typedef struct snake
   int prevx;
   int prevy;
   struct snake *next;
+  unsigned int color;
 } SNAKE;
 
-SNAKE head = {'&', 4, 4, 0, 0, NULL};
+SNAKE head = {'&', 4, 4, 0, 0, NULL, COLOR_CYAN};
 
 typedef struct apple
 {
   int x;
   int y;
   char symbol;
+  unsigned int color;
 } APPLE;
 
-APPLE next = {5, 5, 'O'};
+APPLE next = {5, 5, 'O', COLOR_RED};
 
 void* getChars()
 {
@@ -196,6 +198,7 @@ void addTail()
   (tail -> next) -> prevy = -1;
   (tail -> next) -> prevx = -1;
   (tail -> next) -> symbol = '+';
+  (tail -> next) -> color = tail -> color;
 }
 
 
@@ -235,10 +238,19 @@ void updateBoard()
 {
   int i;
 
-  clear();
+  init_pair(1, head.color, COLOR_BLACK);
+  init_pair(2, next.color, COLOR_BLACK);
 
+  clear();
+  // Set coloring to apple colors 
+  attron(COLOR_PAIR(2));
   mvprintw(next.y, next.x, "O");
+  attroff(COLOR_PAIR(2));  
+
+  // Set coloring to snake colors
+  attron(COLOR_PAIR(1));
   mvprintw(head.y, head.x, "&");
+  attroff(COLOR_PAIR(1));
 
   for(i = 0; i < max_x; i++)
     {
@@ -251,12 +263,14 @@ void updateBoard()
 
   SNAKE* part = head.next;
 
+  // Set coloring to snake colors
+  attron(COLOR_PAIR(1));
   while(part != NULL)
     {
       mvprintw(part -> y, part -> x, "+");
       part = part -> next;
     }
-
+  attroff(COLOR_PAIR(1));
   refresh();
 }
 
@@ -306,6 +320,11 @@ int main()
   noecho();
   curs_set(FALSE);
  
+  // Check if terminal has color
+  // If terminal has no color, color controls are ignored (I hope) 
+  if (has_colors())
+    start_color();
+
   pthread_t characterGetter;
   pthread_t inputReader;
 
